@@ -2,6 +2,7 @@ package com.wacai.metrics;
 
 import com.codahale.metrics.*;
 import com.codahale.metrics.json.MetricsModule;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.Callback;
@@ -15,12 +16,60 @@ import java.util.concurrent.TimeUnit;
 
 public class KafkaReporter extends ScheduledReporter {
 
+    private final String                        appname;
+    private final String                        instance;
+    private final String                        topic;
+    private final Callback                      callback;
+    private final ObjectMapper                  mapper;
+    private final KafkaProducer<String, String> producer;
+    protected KafkaReporter(MetricRegistry registry,
+                            String name,
+                            MetricFilter filter,
+                            TimeUnit rateUnit,
+                            TimeUnit durationUnit,
+                            boolean showSamples,
+                            String topic,
+                            String appname,
+                            String instance,
+                            Properties properties,
+                            Callback callback) {
+        super(registry, name, filter, rateUnit, durationUnit);
+        this.topic = topic;
+        this.appname = appname;
+        this.instance = instance;
+        this.callback = callback;
+        final MetricsModule module = new MetricsModule(rateUnit, durationUnit, showSamples, filter);
+        mapper = new ObjectMapper().registerModule(module);
+        producer = new KafkaProducer<>(properties, new StringSerializer(), new StringSerializer());
+    }
+
     public static Builder forRegistry(MetricRegistry registry,
                                       String topic,
                                       String appname,
                                       String instance,
                                       Properties kafkaConfig) {
         return new Builder(registry, topic, appname, instance, kafkaConfig);
+    }
+
+    @Override
+    public void report(SortedMap<String, Gauge> gauges,
+                       SortedMap<String, Counter> counters,
+                       SortedMap<String, Histogram> histograms,
+                       SortedMap<String, Meter> meters,
+                       SortedMap<String, Timer> timers) {
+        final MetricMessage metricMessage = new MetricMessage(appname, instance, System.currentTimeMillis(),
+                                                              gauges, counters, histograms, meters, timers);
+        try {
+            producer.send(new ProducerRecord<>(topic, mapper.writeValueAsString(metricMessage)), callback);
+        } catch (JsonProcessingException e) {
+            callback.onCompletion(null, e);
+        }
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+        producer.close();
     }
 
     private static class Builder {
@@ -89,56 +138,8 @@ public class KafkaReporter extends ScheduledReporter {
 
     }
 
-    private final String                        appname;
-    private final String                        instance;
-    private final String                        topic;
-    private final Callback                      callback;
-    private final ObjectMapper                  mapper;
-    private final KafkaProducer<String, String> producer;
-
-    protected KafkaReporter(MetricRegistry registry,
-                            String name,
-                            MetricFilter filter,
-                            TimeUnit rateUnit,
-                            TimeUnit durationUnit,
-                            boolean showSamples,
-                            String topic,
-                            String appname,
-                            String instance,
-                            Properties properties,
-                            Callback callback) {
-        super(registry, name, filter, rateUnit, durationUnit);
-        this.topic = topic;
-        this.appname = appname;
-        this.instance = instance;
-        this.callback = callback;
-        final MetricsModule module = new MetricsModule(rateUnit, durationUnit, showSamples, filter);
-        mapper = new ObjectMapper().registerModule(module);
-        producer = new KafkaProducer<>(properties, new StringSerializer(), new StringSerializer());
-    }
-
-    @Override
-    public void report(SortedMap<String, Gauge> gauges,
-                       SortedMap<String, Counter> counters,
-                       SortedMap<String, Histogram> histograms,
-                       SortedMap<String, Meter> meters,
-                       SortedMap<String, Timer> timers) {
-        final Message message = new Message(appname, instance, System.currentTimeMillis(),
-                                            gauges, counters, histograms, meters, timers);
-        try {
-            producer.send(new ProducerRecord<>(topic, mapper.writeValueAsString(message)), callback);
-        } catch (JsonProcessingException e) {
-            callback.onCompletion(null, e);
-        }
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
-        producer.close();
-    }
-
-    private static class Message {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    static class MetricMessage {
         private final String                       appname;
         private final String                       instance;
         private final long                         timestampMillis;
@@ -148,11 +149,11 @@ public class KafkaReporter extends ScheduledReporter {
         private final SortedMap<String, Meter>     meters;
         private final SortedMap<String, Timer>     timers;
 
-        public Message(String appname, String instance, long timestampMillis, SortedMap<String, Gauge> gauges,
-                       SortedMap<String, Counter> counters,
-                       SortedMap<String, Histogram> histograms,
-                       SortedMap<String, Meter> meters,
-                       SortedMap<String, Timer> timers) {
+        public MetricMessage(String appname, String instance, long timestampMillis, SortedMap<String, Gauge> gauges,
+                             SortedMap<String, Counter> counters,
+                             SortedMap<String, Histogram> histograms,
+                             SortedMap<String, Meter> meters,
+                             SortedMap<String, Timer> timers) {
             this.appname = appname;
             this.instance = instance;
             this.timestampMillis = timestampMillis;

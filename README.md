@@ -31,3 +31,27 @@ report.stop();
 ### Metrics Counter Help
 
 <http://metrics.dropwizard.io/3.1.0/manual/core/#counters>
+
+## Message JSON Example
+
+```json
+{
+  "appname" : "app",
+  "instance" : "10.0.0.1",
+  "timestampMillis" : 1449632523805,
+  "gauges" : {
+    "cpu" : {
+      "value" : 0.9
+    }
+  },
+  "counters" : {
+    "cnt" : {
+      "count" : 100
+    }
+  }
+}
+```
+
+> Gauge 和 Counter 已基本满足 Dashboard 对基本数据的需求
+
+> 如需使用更多的 Metric, 请在[MessageTest.java](./src/test/java/com/wacai/metrics/MessageTest.java)中获取更多 JSON 示例. 
