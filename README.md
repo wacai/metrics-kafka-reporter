@@ -54,4 +54,10 @@ report.stop();
 
 > Gauge 和 Counter 已基本满足 Dashboard 对基本数据的需求
 
-> 如需使用更多的 Metric, 请在[MessageTest.java](./src/test/java/com/wacai/metrics/MessageTest.java)中获取更多 JSON 示例. 
+> 如需使用更多的 Metric, 请在[MessageTest.java](./src/test/java/com/wacai/metrics/MessageTest.java)中获取更多 JSON 示例.
+ 
+## Change Log
+ 
+### 0.0.1
+ 
+* Send metrics message to kafka. 
