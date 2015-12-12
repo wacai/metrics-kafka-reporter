@@ -10,6 +10,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.lang.management.ManagementFactory;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +23,7 @@ public class KafkaReporter extends ScheduledReporter {
     private final Callback                      callback;
     private final ObjectMapper                  mapper;
     private final KafkaProducer<String, String> producer;
+
     protected KafkaReporter(MetricRegistry registry,
                             String name,
                             MetricFilter filter,
@@ -36,7 +38,7 @@ public class KafkaReporter extends ScheduledReporter {
         super(registry, name, filter, rateUnit, durationUnit);
         this.topic = topic;
         this.appname = appname;
-        this.instance = instance;
+        this.instance = instance + "-" + ManagementFactory.getRuntimeMXBean().getStartTime();
         this.callback = callback;
         final MetricsModule module = new MetricsModule(rateUnit, durationUnit, showSamples, filter);
         mapper = new ObjectMapper().registerModule(module);
