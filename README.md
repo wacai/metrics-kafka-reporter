@@ -35,7 +35,7 @@ report.stop();
 ```json
 {
   "appname" : "app",
-  "instance" : "10.0.0.1",
+  "instance" : "10.0.0.1-1449632521805",
   "timestampMillis" : 1449632523805,
   "gauges" : {
     "cpu" : {
@@ -55,6 +55,10 @@ report.stop();
 > 如需使用更多的 Metric, 请在[MessageTest.java](./src/test/java/com/wacai/metrics/MessageTest.java)中获取更多 JSON 示例.
  
 ## Change Log
+
+### 0.0.2
+
+* Append start time to instance.
  
 ### 0.0.1
  
