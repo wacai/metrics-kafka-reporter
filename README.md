@@ -1,5 +1,9 @@
 ## Install
 
+```
+> mvn clean install
+```
+
 ```xml
 
 <dependency>
@@ -26,7 +30,9 @@ invokeCounter.inc();
 report.stop();
 ```
 
-### Metrics Counter Help
+###
+> mvn clean install
+```Metrics Counter Help
 
 <http://metrics.dropwizard.io/3.1.0/manual/core/#counters>
 
